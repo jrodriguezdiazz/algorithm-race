@@ -1,7 +1,6 @@
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
 
 public class Main extends JPanel {
 
@@ -52,40 +51,41 @@ public class Main extends JPanel {
 
     private void performAlgorithmsInBackground(final int[] arrayToOrder, final int targetNumber) {
         SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            long startTime;
-
             @Override
             protected Void doInBackground() throws Exception {
                 // Sequential Search
-                startTime = System.nanoTime();
-                int sequentialSearchResult = sequentialSearch(arrayToOrder, targetNumber);
-                String sequentialSearchTime = formatTime(System.nanoTime() - startTime);
+                SequentialSearch sequentialSearch = new SequentialSearch(arrayToOrder, targetNumber);
+                sequentialSearch.start();
 
                 // Binary Search
-                startTime = System.nanoTime();
-                int binarySearchResult = Arrays.binarySearch(arrayToOrder, targetNumber);
-                String binarySearchTime = formatTime(System.nanoTime() - startTime);
+                BinarySearch binarySearch = new BinarySearch(arrayToOrder, targetNumber);
+                binarySearch.start();
 
                 // Bubble Sort
-                startTime = System.nanoTime();
-                bubbleSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
-                String bubbleSortTime = formatTime(System.nanoTime() - startTime);
+                BubbleSort bubbleSort = new BubbleSort(arrayToOrder);
+                bubbleSort.start();
 
                 // Insertion Sort
-                startTime = System.nanoTime();
-                insertionSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
-                String insertionSortTime = formatTime(System.nanoTime() - startTime);
+                InsertionSort insertionSort = new InsertionSort(arrayToOrder);
+                insertionSort.start();
 
                 // Quick Sort
-                startTime = System.nanoTime();
-                quickSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
-                String quickSortTime = formatTime(System.nanoTime() - startTime);
+                QuickSort quickSort = new QuickSort(arrayToOrder);
+                quickSort.start();
 
-                sequentialSearchTextField.setText("Sequential Search: " + (sequentialSearchResult >= 0 ? "Found at index " + sequentialSearchResult : "Not found") + " - Time: " + sequentialSearchTime);
-                binarySearchTextField.setText("Binary Search: " + (binarySearchResult >= 0 ? "Found at index " + binarySearchResult : "Not found") + " - Time: " + binarySearchTime);
-                bubbleSortTextField.setText("Bubble Sort: " + bubbleSortTime);
-                insertionSortTextField.setText("Insertion Time: " + insertionSortTime);
-                quickSortTextField.setText("Quick Sort: " + quickSortTime);
+                // Wait for all of the algorithm threads to finish executing
+                sequentialSearch.join();
+                binarySearch.join();
+                bubbleSort.join();
+                insertionSort.join();
+                quickSort.join();
+
+                // Update the UI
+                sequentialSearchTextField.setText(String.format("Sequential Search: %s - %s", (sequentialSearch.getResult() >= 0 ? "Found at index " + sequentialSearch.getResult() : "Not found"), formatTime(sequentialSearch.getTime())));
+                binarySearchTextField.setText(String.format("Binary Search: %s - %s", (binarySearch.getResult() >= 0 ? "Found at index " + binarySearch.getResult() : "Not found"), formatTime(binarySearch.getTime())));
+                bubbleSortTextField.setText(String.format("Bubble Sort: %s", formatTime(bubbleSort.getTime())));
+                insertionSortTextField.setText(String.format("Insertion Sort: %s", formatTime(insertionSort.getTime())));
+                quickSortTextField.setText(String.format("Quick Sort: %s", formatTime(quickSort.getTime())));
 
                 return null;
             }
@@ -136,8 +136,6 @@ public class Main extends JPanel {
         }
     }
 
-
-
     private void resetFields() {
         targetNumberTextField.setText("");
         arrayToOrderTextField.setText("");
@@ -161,78 +159,210 @@ public class Main extends JPanel {
         }
     }
 
-    private int sequentialSearch(int[] array, int target) {
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == target) {
-                return i;
-            }
-        }
-        return -1; // No encontrado
-    }
+    public class SequentialSearch extends Thread {
 
-    private int[] bubbleSort(int[] array) {
-        int n = array.length;
-        for (int i = 0; i < n - 1; i++) {
-            for (int j = 0; j < n - i - 1; j++) {
-                if (array[j] > array[j + 1]) {
-                    // Intercambiar array[j] y array[j+1]
-                    int temp = array[j];
-                    array[j] = array[j + 1];
-                    array[j + 1] = temp;
+        private final int[] array;
+        private final int target;
+        private volatile int result;
+        private volatile long time;
+
+        public SequentialSearch(int[] array, int target) {
+            this.array = array;
+            this.target = target;
+        }
+
+        @Override
+        public void run() {
+            long startTime = System.nanoTime();
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] == target) {
+                    result = i;
+                    break;
                 }
             }
-        }
-        return array;
-    }
 
-    private int[] insertionSort(int[] array) {
-        int n = array.length;
-        for (int i = 1; i < n; i++) {
-            int key = array[i];
-            int j = i - 1;
-
-            // Mover elementos del array[0..i-1] que son mayores que key
-            while (j >= 0 && array[j] > key) {
-                array[j + 1] = array[j];
-                j = j - 1;
+            if (result == -1) {
+                result = -1;
             }
-            array[j + 1] = key;
+            time = System.nanoTime() - startTime;
         }
-        return array;
-    }
 
-    private int[] quickSort(int[] array) {
-        quickSortHelper(array, 0, array.length - 1);
-        return array;
-    }
+        public int getResult() {
+            return result;
+        }
 
-    private void quickSortHelper(int[] array, int low, int high) {
-        if (low < high) {
-            int pi = partition(array, low, high);
-
-            quickSortHelper(array, low, pi - 1);
-            quickSortHelper(array, pi + 1, high);
+        public long getTime() {
+            return time;
         }
     }
 
-    private int partition(int[] array, int low, int high) {
-        int pivot = array[high];
-        int i = (low - 1);
-        for (int j = low; j < high; j++) {
-            if (array[j] < pivot) {
-                i++;
+    public class BinarySearch extends Thread {
 
-                int temp = array[i];
-                array[i] = array[j];
-                array[j] = temp;
+        private final int[] array;
+        private final int target;
+        private volatile int result;
+        private volatile long time;
+
+        public BinarySearch(int[] array, int target) {
+            this.array = array;
+            this.target = target;
+        }
+
+        @Override
+        public void run() {
+            long startTime = System.nanoTime();
+            int low = 0;
+            int high = array.length - 1;
+
+            while (low <= high) {
+                int mid = (low + high) / 2;
+
+                if (array[mid] == target) {
+                    result = mid;
+                    break;
+                } else if (array[mid] < target) {
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+
+            if (result == -1) {
+                result = -1;
+            }
+
+            time = System.nanoTime() - startTime;
+        }
+
+        public int getResult() {
+            return result;
+        }
+
+        public long getTime() {
+            return time;
+        }
+    }
+
+
+    public class BubbleSort extends Thread {
+
+        private final int[] array;
+        private volatile long time;
+
+        public BubbleSort(int[] array) {
+            this.array = array;
+        }
+
+        @Override
+        public void run() {
+            long startTime = System.nanoTime();
+
+            int n = array.length;
+            for (int i = 0; i < n - 1; i++) {
+                for (int j = 0; j < n - i - 1; j++) {
+                    if (array[j] > array[j + 1]) {
+                        // Intercambiar array[j] y array[j+1]
+                        int temp = array[j];
+                        array[j] = array[j + 1];
+                        array[j + 1] = temp;
+                    }
+                }
+            }
+
+            time = System.nanoTime() - startTime;
+        }
+
+        public long getTime() {
+            return time;
+        }
+    }
+
+
+    public class InsertionSort extends Thread {
+
+        private final int[] array;
+        private volatile long time;
+
+        public InsertionSort(int[] array) {
+            this.array = array;
+        }
+
+        @Override
+        public void run() {
+            long startTime = System.nanoTime();
+
+            int n = array.length;
+            for (int i = 1; i < n; i++) {
+                int key = array[i];
+                int j = i - 1;
+
+                // Mover elementos del array[0..i-1] que son mayores que key
+                while (j >= 0 && array[j] > key) {
+                    array[j + 1] = array[j];
+                    j = j - 1;
+                }
+                array[j + 1] = key;
+            }
+
+            time = System.nanoTime() - startTime;
+        }
+
+        public long getTime() {
+            return time;
+        }
+    }
+
+
+    public class QuickSort extends Thread {
+
+        private final int[] array;
+        private volatile long time;
+
+        public QuickSort(int[] array) {
+            this.array = array;
+        }
+
+        @Override
+        public void run() {
+            long startTime = System.nanoTime();
+
+            quickSortHelper(array, 0, array.length - 1);
+
+            time = System.nanoTime() - startTime;
+        }
+
+        private void quickSortHelper(int[] array, int low, int high) {
+            if (low < high) {
+                int pi = partition(array, low, high);
+
+                quickSortHelper(array, low, pi - 1);
+                quickSortHelper(array, pi + 1, high);
             }
         }
 
-        int temp = array[i + 1];
-        array[i + 1] = array[high];
-        array[high] = temp;
+        private int partition(int[] array, int low, int high) {
+            int pivot = array[high];
+            int i = (low - 1);
+            for (int j = low; j < high; j++) {
+                if (array[j] < pivot) {
+                    i++;
 
-        return i + 1;
+                    int temp = array[i];
+                    array[i] = array[j];
+                    array[j] = temp;
+                }
+            }
+
+            int temp = array[i + 1];
+            array[i + 1] = array[high];
+            array[high] = temp;
+
+            return i + 1;
+        }
+
+        public long getTime() {
+            return time;
+        }
     }
 
 
