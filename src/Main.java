@@ -80,12 +80,12 @@ public class Main extends JPanel {
                 startTime = System.nanoTime();
                 quickSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
                 String quickSortTime = formatTime(System.nanoTime() - startTime);
-                System.out.println(quickSortTime);
+
                 sequentialSearchTextField.setText("Sequential Search: " + (sequentialSearchResult >= 0 ? "Found at index " + sequentialSearchResult : "Not found") + " - Time: " + sequentialSearchTime);
                 binarySearchTextField.setText("Binary Search: " + (binarySearchResult >= 0 ? "Found at index " + binarySearchResult : "Not found") + " - Time: " + binarySearchTime);
-                bubbleSortTextField.setText("Time: " + bubbleSortTime);
-                insertionSortTextField.setText("Time: " + insertionSortTime);
-                quickSortTextField.setText("Time: " + quickSortTime);
+                bubbleSortTextField.setText("Bubble Sort: " + bubbleSortTime);
+                insertionSortTextField.setText("Insertion Time: " + insertionSortTime);
+                quickSortTextField.setText("Quick Sort: " + quickSortTime);
 
                 return null;
             }
