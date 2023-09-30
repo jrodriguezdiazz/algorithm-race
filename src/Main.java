@@ -32,11 +32,66 @@ public class Main extends JPanel {
     }
 
     private void performSearchAndSort() {
-        sequentialSearchTextField.setText("Sequential Search Result");
-        binarySearchTextField.setText("Binary Search Result");
-        bubbleSortTextField.setText("Bubble Sort Result");
-        insertionSortTextField.setText("Insertion Sort Result");
-        quickSortTextField.setText("Quick Sort Result");
+        String arrayInput = arrayToOrderTextField.getText();
+        String targetNumberInput = targetNumberTextField.getText();
+
+        if (isValidInput(arrayInput) && isValidNumber(targetNumberInput)) {
+            int targetNumber = Integer.parseInt(targetNumberInput);
+            String[] arrayStrings = arrayInput.split(",");
+            int[] arrayToOrder = new int[arrayStrings.length];
+
+            for (int i = 0; i < arrayStrings.length; i++) {
+                arrayToOrder[i] = Integer.parseInt(arrayStrings[i]);
+            }
+
+            performAlgorithmsInBackground(arrayToOrder, targetNumber);
+        } else {
+            JOptionPane.showMessageDialog(null, "Por favor, ingresa un arreglo válido y un número válido.");
+        }
+    }
+
+    private void performAlgorithmsInBackground(final int[] arrayToOrder, final int targetNumber) {
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            long startTime;
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Sequential Search
+                startTime = System.nanoTime();
+                int sequentialSearchResult = sequentialSearch(arrayToOrder, targetNumber);
+                String sequentialSearchTime = formatTime(System.nanoTime() - startTime);
+
+                // Binary Search
+                startTime = System.nanoTime();
+                int binarySearchResult = Arrays.binarySearch(arrayToOrder, targetNumber);
+                String binarySearchTime = formatTime(System.nanoTime() - startTime);
+
+                // Bubble Sort
+                startTime = System.nanoTime();
+                bubbleSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
+                String bubbleSortTime = formatTime(System.nanoTime() - startTime);
+
+                // Insertion Sort
+                startTime = System.nanoTime();
+                insertionSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
+                String insertionSortTime = formatTime(System.nanoTime() - startTime);
+
+                // Quick Sort
+                startTime = System.nanoTime();
+                quickSort(Arrays.copyOf(arrayToOrder, arrayToOrder.length));
+                String quickSortTime = formatTime(System.nanoTime() - startTime);
+                System.out.println(quickSortTime);
+                sequentialSearchTextField.setText("Sequential Search: " + (sequentialSearchResult >= 0 ? "Found at index " + sequentialSearchResult : "Not found") + " - Time: " + sequentialSearchTime);
+                binarySearchTextField.setText("Binary Search: " + (binarySearchResult >= 0 ? "Found at index " + binarySearchResult : "Not found") + " - Time: " + binarySearchTime);
+                bubbleSortTextField.setText("Time: " + bubbleSortTime);
+                insertionSortTextField.setText("Time: " + insertionSortTime);
+                quickSortTextField.setText("Time: " + quickSortTime);
+
+                return null;
+            }
+        };
+
+        worker.execute();
     }
 
     private void setUI() {
@@ -64,6 +119,24 @@ public class Main extends JPanel {
         add(quickSortTextField);
 
     }
+
+    public static String formatTime(long nanoseconds) {
+        long milliseconds = nanoseconds / 1000000;
+        long remainingNanoseconds = nanoseconds % 1000000;
+        if (milliseconds >= 60000) {
+            long minutes = milliseconds / 60000;
+            milliseconds %= 60000;
+            return minutes + " minutes " + milliseconds + " milliseconds " + remainingNanoseconds + " nanoseconds";
+        } else if (milliseconds >= 1000) {
+            long seconds = milliseconds / 1000;
+            milliseconds %= 1000;
+            return seconds + " seconds " + milliseconds + " milliseconds " + remainingNanoseconds + " nanoseconds";
+        } else {
+            return milliseconds + " milliseconds " + remainingNanoseconds + " nanoseconds";
+        }
+    }
+
+
 
     private void resetFields() {
         targetNumberTextField.setText("");
